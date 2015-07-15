@@ -13,8 +13,7 @@ public with sharing class ext1 {
     public Date myDate = Date.newInstance(2015, 06, 11);
     public Time myTime = Time.newInstance(0, 0, 0, 0);
     public DateTime dt = DateTime.newInstance(myDate, myTime);
-     
-    public Map <Id,Deal__c> deals {
+        public Map <Id,Deal__c> deals {
         get {
             deals = new Map <Id,Deal__c> ();
             for (Deal__c a : [SELECT Id, Name, Available_Deals__c, Icon__c, Valid_Through__c 
@@ -38,6 +37,9 @@ public with sharing class ext1 {
         set;}
     
     public ext1(ApexPages.StandardController controller) {
+    
+    
+    
         
         getDealData();
         selectToday();
@@ -133,7 +135,7 @@ public with sharing class ext1 {
         return emailToBatch;
     }
  
- //just playing with spaces an comments to test github
+ //j u s t p l a y i n g w i t h  s p a c e s  a n  c o m m e n ts to test github
     
     public String getrecToBatch(){
         return recToBatch;
