@@ -1,0 +1,164 @@
+public with sharing class ext1 {
+        
+    public String recAccept  { get; set; }
+    public String status     { get; set; }
+    public String emailToBatch      { get; set; }
+    public String timeToBatch      { get; set; }
+    public String recToBatch  { get; set; }
+    public Integer sumAvail  { get; set; }
+    public Integer sumReview { get; set; }
+    public Integer sumAccept { get; set; }
+    public Integer sumReject { get; set; }
+    public Integer todRate   { get; set; }
+    public Date myDate = Date.newInstance(2015, 06, 11);
+    public Time myTime = Time.newInstance(0, 0, 0, 0);
+    public DateTime dt = DateTime.newInstance(myDate, myTime);
+     
+    public Map <Id,Deal__c> deals {
+        get {
+            deals = new Map <Id,Deal__c> ();
+            for (Deal__c a : [SELECT Id, Name, Available_Deals__c, Icon__c, Valid_Through__c 
+                              FROM Deal__c]) {
+                 deals.put(a.id, a);
+            } 
+            return deals;
+        }
+        set;}
+      
+    public Map <Id,Deal_Action__c> dealActions {
+        get {
+            dealActions = new Map <Id,Deal_Action__c> ();
+            for (Deal_Action__c b : [SELECT Id, Name, Contact__c, Action__c, Deal__c, Contact__r.Email 
+                                     FROM Deal_Action__c 
+                                     WHERE Contact__r.Id =:ApexPages.currentPage().getParameters().get('Id')]) {
+                dealActions.put(b.id, b);
+            }
+            return dealActions;
+        }
+        set;}
+    
+    public ext1(ApexPages.StandardController controller) {
+        
+        getDealData();
+        selectToday();
+         
+    }
+    
+    public Contact gettotal () {
+        return [SELECT Id, Name, Deals_Accepted__c, Deals_Rejected__c, Acceptance_Rate__c 
+                FROM Contact 
+                WHERE Id = :ApexPages.currentPage().getParameters().get('Id')];
+    }
+        
+    public class dealData {
+    
+        public String Id { get; set; }
+        public String daId { get; set; }
+        public String dealStatus { get; set; }
+        public String dealPic { get; set; }
+        public String dealName { get; set; }
+        public String dealDate { get; set; }
+        public String Email { get; set; }
+        public Integer dealAvail { get; set; }
+        
+        public dealData (String Id, String daId, String dealStatus, String dealPic, String dealName, String dealDate, String Email, Integer dealAvail) {
+        
+            this.Id = Id;
+            this.daId = daId;
+            this.dealStatus = dealStatus;
+            this.dealPic = dealPic;
+            this.dealName = dealName;
+            this.dealDate = dealDate;
+            this.Email = Email;
+            this.dealAvail = dealAvail;
+        }
+    }
+    
+    public List<dealData> getDealData() {
+        List<dealData> result = new List<dealData>();
+        if(deals != null && dealActions !=null) {
+            for(Deal_Action__c asd : dealActions.values()) {
+                result.add(new dealData (deals.get(asd.Deal__c).Id, asd.Id, asd.Action__c, deals.get(asd.Deal__c).Icon__c, deals.get(asd.Deal__c).Name, string.valueOf(deals.get(asd.Deal__c).Valid_Through__c), string.valueOf(asd.Contact__r.Email), integer.valueOf(deals.get(asd.Deal__c).Available_Deals__c)));
+                      
+            }  
+        } 
+    return result;
+          
+    }  
+    
+    public void SelectDA() {
+       
+        Deal_Action__c toAccept = [SELECT Action__c 
+                                   FROM Deal_Action__c 
+                                   WHERE Id =: recAccept];
+        toAccept.Action__c = status;
+        update toAccept;
+        selectToday();
+    }
+    
+    public void selectToday() {
+       
+        List <Deal_Action__c> dealAvail = [SELECT Id, Action__c, Deal__r.Valid_Through__c, LastModifiedDate 
+                                           FROM Deal_Action__c 
+                                           WHERE Contact__r.Id =:ApexPages.currentPage().getParameters().get('Id')];
+        List <Deal_Action__c> sumAvs = new List <Deal_Action__c> ();
+        List <Deal_Action__c> sumRevs = new List <Deal_Action__c> ();
+        List <Deal_Action__c> sumAccs = new List <Deal_Action__c> ();
+        List <Deal_Action__c> sumRejs = new List <Deal_Action__c> ();
+            for (Deal_Action__c a : dealAvail) {
+                if (a.Action__c == 'Available' && a.Deal__r.Valid_Through__c >= dt) {
+                    sumAvs.add(a);
+                }
+                else if (a.Action__c == 'Accepted' && a.LastModifiedDate > dt) {
+                    sumAccs.add(a);
+                    sumRevs.add(a);
+                } 
+                else if (a.Action__c == 'Rejected' && a.LastModifiedDate > dt) {
+                    sumRejs.add(a);
+                    sumRevs.add(a);
+                }
+            }
+        sumAvail  = sumAvs.size();    
+        sumReview = sumRevs.size();
+        sumAccept = sumAccs.size();
+        sumReject = sumRejs.size();
+            if (sumReview != 0) {
+            todRate = sumAccept*100/sumReview;
+            }
+            else {
+            todRate = 0;
+            } 
+ 
+    }
+    
+    public String getemailToBatch(){
+        return emailToBatch;
+    }
+    
+    public String getrecToBatch(){
+        return recToBatch;
+    }
+    
+    public String gettimeToBatch(){
+        return timeToBatch;
+    }
+    
+    public void batchEmails() {
+    
+    batchChangeEmail z = new batchChangeEmail();
+    z.newEmail = emailToBatch;
+    database.executeBatch(z);
+    
+    }
+    
+    public void scheduleEmails() {
+    
+    Integer a = Integer.valueOf(timeToBatch);
+    Integer b = Integer.valueOf(recToBatch);
+    batchChangeEmail z = new batchChangeEmail();
+    z.newEmail = emailToBatch;
+    system.scheduleBatch(z,'Visualforce Batch Schedule job', a, b);
+    
+    }
+     
+}
