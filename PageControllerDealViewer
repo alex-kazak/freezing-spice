@@ -51,7 +51,6 @@ public with sharing class ext1 {
     }
         
     public class dealData {
-    
         public String Id { get; set; }
         public String daId { get; set; }
         public String dealStatus { get; set; }
@@ -128,12 +127,13 @@ public with sharing class ext1 {
             else {
             todRate = 0;
             } 
- 
-    }
+     }
     
     public String getemailToBatch(){
         return emailToBatch;
     }
+ 
+ //just playing with spaces an comments to test github
     
     public String getrecToBatch(){
         return recToBatch;
